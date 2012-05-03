@@ -13,5 +13,6 @@ class image(object):
         draw.rectangle([(((main_size/2)-(square_size/2)), (main_size/2)-(square_size/2)-1), ((main_size/2)+(square_size/2), (main_size/2)+(square_size/2)-1)],fill=(200,0,0))
         pp.imshow(self.i, interpolation="nearest")
 
-image(30,10)
-pp.show()
+if __name__ == '__main__':
+    image(30,10)
+    pp.show()
