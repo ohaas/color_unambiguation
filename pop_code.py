@@ -88,7 +88,7 @@ class Population(object):
                     angle=(ny.arcsin(y1/r))
                     y2=ny.arange(0,1.01,0.01)
                     x2=angle+(0.0*y2)
-                    ax=pp.subplot(math.ceil(time_frames/3.0),3,i+1, polar=True)
+                    ax=pp.subplot(math.floor(time_frames/3.0)+1,3,i+1, polar=True)
                     ax.plot(x2,y2)
                     pp.title('After %d Model Cycles' %i)
        #         pp.polar(x1,y1)
