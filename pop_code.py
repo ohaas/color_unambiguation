@@ -5,6 +5,7 @@ import matplotlib.pyplot as pp
 from matplotlib.patches import FancyArrowPatch as fap
 import Stimulus
 import Neurons
+import math
 
 class Population(object):
 
@@ -26,10 +27,10 @@ class Population(object):
         neurons = [Neurons.N(self.width).neuron_gauss(degree) for degree in angle]
 
         #2) NEURONAL ACTIVITY AT POINT X IN DEGREES E.G.: Neuron1.neuron_gauss(X)
-        self.pop_background=[(neurons[i])[45.0] for i in ny.arange(0,len(angle))]
+        self.pop_background=[(neurons[i])[0.0] for i in ny.arange(0,len(angle))]
         self.pop_square=[(neurons[i])[90.0] for i in ny.arange(0,len(angle))]
         self.square_x=ny.arange((main_size/2)-(square_size/2),(main_size/2)+(square_size/2)+1)
-        self.square_y=ny.arange((main_size/2)-(square_size/2)-1,(main_size/2)+(square_size/2))
+        self.square_y=ny.arange((main_size/2)-(square_size/2)+1,(main_size/2)+(square_size/2)+2)
 
 
     def initial_pop_code(self):
@@ -69,25 +70,31 @@ class Population(object):
                             h_v_edges[1]=x3*180/ny.pi
         return h_v_edges
 
-    def plot_pop(self, population_code,t):
+
+    def plot_pop(self, population_code, time_frames, i):
         """
         PLOT POPULATION CODE FOR ALL PIXELS:
         """
-        for a in ny.arange(0,self.main_size):
-            for b in ny.arange(0,self.main_size):
-                multiple=ny.multiply(population_code[a,b,:],ny.transpose(self.vec))
-                x=ny.sum(multiple[0,:])
-                y=ny.sum(multiple[1,:])
-                # connect (0,0) with (x,y):
-                r=ny.sqrt((x**2)+(y**2))
-                angle=(ny.arcsin(y/r))
-                y1=ny.arange(0,1.01,0.01)
-                x1=angle+(0.0*y1)
-                pp.polar(x1,y1)
-        pp.xlabel('Neuron number')
-        pp.ylabel('Neuronal activation')
-        pp.suptitle('Population code after %d model cycles' %t)
-        pp.show()
+        for x in ny.arange(0.0,self.main_size):
+            for y in ny.arange(0.0,self.main_size):
+                if not ny.any(population_code[x,y,:])==0:
+
+
+                    multiple=ny.multiply(population_code[x,y,:],ny.transpose(self.vec))
+                    x1=ny.sum(multiple[0,:])
+                    y1=ny.sum(multiple[1,:])
+                    # connect (0,0) with (x,y):
+                    r=ny.sqrt((x1**2)+(y1**2))
+                    angle=(ny.arcsin(y1/r))
+                    y2=ny.arange(0,1.01,0.01)
+                    x2=angle+(0.0*y2)
+                    ax=pp.subplot(math.ceil(time_frames/3.0),3,i+1, polar=True)
+                    ax.plot(x2,y2)
+                    pp.title('After %d Model Cycles' %i)
+       #         pp.polar(x1,y1)
+       # pp.xlabel('Neuron number')
+       # pp.ylabel('Neuronal activation')
+       # pp.suptitle('Population code after %d model cycles' %t)
 
 
 

@@ -10,7 +10,7 @@ class image(object):
     def __init__(self,main_size,square_size):
         self.main_size=main_size
         self.square_size=square_size
-        self.i=Image.new("RGB",(main_size,main_size),color=(0,0,200))
+        self.i=Image.new("RGB",(main_size+1,main_size+1),color=(0,0,200))
 
     def pic(self):
         draw = ImageDraw.Draw(self.i)
