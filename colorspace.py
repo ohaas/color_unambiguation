@@ -4,6 +4,7 @@ import numpy as ny
 import matplotlib.pyplot as pp
 from matplotlib import rc
 
+
 class twoD(object):
 
     def __init__(self, res, z):
