@@ -1,8 +1,5 @@
 __author__ = 'ohaas'
 
-__author__ = 'ohaas'
-
-
 import numpy as ny
 import matplotlib.pyplot as pp
 from matplotlib import rc
@@ -16,7 +13,6 @@ class twoD(object):
 
     def circle(self):
 
-    #        i=1
         for r in ny.arange(0.0,1.0+self.res,self.res):
             res1=self.res*(1/(r+self.res))
             t = ny.arange(0.0,2*ny.pi, res1)
@@ -25,11 +21,6 @@ class twoD(object):
             maxi=1+(ny.absolute(self.z)/2.0)
             L=((self.z+x)/2.0)
             M=((self.z-x)/2.0)
-            S=(y+(self.z/2.0))
-            #                print L,M,S
-            #                all=((2*ny.pi)/res1)*((1.0+self.res)/self.res)
-            #                print i ,' th trial of the total', all
-            #                i+=1
             c=ny.array((L,M,S))
             c=0.5+(0.5*c/maxi)
             pp.scatter(x, y, color=c.T, edgecolors='none')
