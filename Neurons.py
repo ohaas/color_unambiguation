@@ -55,4 +55,5 @@ class N(object):
 
 
 if __name__ == '__main__':
+    N(30.0).plot_act()
     pp.show()
