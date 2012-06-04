@@ -61,7 +61,6 @@ class Population(object):
                         ax.add_patch(fap((x,y),((x+(self.square_size/4)*x1/ny.sqrt(x1**2+y1**2)),((y+(self.square_size/4)*y1/ny.sqrt(x1**2+y1**2)))), arrowstyle='->',linewidth=0.5,mutation_scale=10))
                         self.I.pic() # shows the stimulus
 
-
                     else:
                         r=ny.sqrt((x1**2)+(y1**2))
                         x3=ny.arcsin(y1/r)
@@ -71,48 +70,74 @@ class Population(object):
                             h_v_edges[1]=x3*180/ny.pi
         return h_v_edges
 
+    def pop_degree(self, population_code, x , y):
+        multiple=ny.multiply(population_code[x,y,:],ny.transpose(self.vec))
+        x1=ny.sum(multiple[0,:])
+        y1=ny.sum(multiple[1,:])
+        if x1<0:
+            angle=(ny.arctan(y1/x1)+ny.pi)
+        elif x1>0 and y1>=0:
+            angle=ny.arctan(y1/x1)
+        elif x1>0 and y1<0:
+            angle=(ny.arctan(y1/x1)+(2*ny.pi))
+        elif x1==0 and y1>0:
+            angle=ny.pi/2.0
+        else:
+            angle=3*ny.pi/2
+        return angle
 
     def plot_pop(self, population_code, time_frames, i):
-        """
-        PLOT POPULATION CODE FOR ALL PIXELS:
-        """
+
+        # get current axes object
+        #frame1 = pp.gca()
+        # get current figure
+        fig = pp.gcf()
+        frame1 = fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1, frameon=False)
+        im = pp.imread('colorspace_polar_z=0.0.jpg')
+        im = ny.fliplr(ny.rot90(im, k=2))
+        # draw it on the canvas
+        pp.imshow(im,figure=frame1)
+        # hide axes
+        frame1.axes.get_xaxis().set_visible(False)
+        frame1.axes.get_yaxis().set_visible(False)
+        frame1.set_axis_off()
+
         for x in ny.arange(0.0,self.main_size):
             for y in ny.arange(0.0,self.main_size):
                 if not ny.any(population_code[x,y,:])==0:
-
-
-                    multiple=ny.multiply(population_code[x,y,:],ny.transpose(self.vec))
-                    x1=ny.sum(multiple[0,:])
-                    y1=ny.sum(multiple[1,:])
-                    # connect (0,0) with (x,y):
-                    r=ny.sqrt((x1**2)+(y1**2))
-                    if x1<0:
-                        angle=(ny.arctan(y1/x1)+ny.pi)
-                    elif x1>0 and y1>=0:
-                        angle=ny.arctan(y1/x1)
-                    elif x1>0 and y1<0:
-                        angle=(ny.arctan(y1/x1)+(2*ny.pi))
-                    elif x1==0 and y1>0:
-                        angle=ny.pi/2.0
-                    else:
-                        angle=3*ny.pi/2
+                    angle = self.pop_degree(population_code, x, y)
                     y2=ny.arange(0,1.01,0.01)
                     x2=angle+(0.0*y2)
-                    ax=pp.subplot(math.floor(time_frames/3.0)+1,3,i+1, polar=True)
-                    ax.plot(x2,y2)
+                    frame2 = fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1, polar=True, axisbg='none', frameon=False)
+                    frame2.plot(x2,y2,'k')
                     pp.title('After %d Model Cycles' %i)
-       #         pp.polar(x1,y1)
-       # pp.xlabel('Neuron number')
-       # pp.ylabel('Neuronal activation')
-       # pp.suptitle('Population code after %d model cycles' %t)
+                    frame2.axes.get_xaxis().set_visible(False)
+                    frame2.axes.get_yaxis().set_visible(False)
 
 
+    def plot_row(self, x, y, population_code, i, x_all=True):
+        self.all=x_all
+        if self.all:
+            for x in ny.arange(0.0,self.main_size):
+                angle =(180.0/ny.pi)*self.pop_degree(population_code, x, y)
+                pp.scatter(x,angle)
+                pp.title('After %d Model Cycles' %i)
+                pp.xlabel('all x pixels for y=%d' %y)
+                pp.ylabel('direction in color space in degree')
+        else:
+            for y in ny.arange(0.0,self.main_size):
+                angle = (180/ny.pi)*self.pop_degree(population_code, x, y)
+                pp.scatter(y,angle)
+                pp.title('After %d Model Cycles' %i)
+                pp.xlabel('all y pixels for x=%d' %x)
+                pp.ylabel('direction in color space in degree')
 
 
 if __name__ == '__main__':
     p = Population(30, 10, 30)
     pop=p.initial_pop_code()
-    pop.show_vectors()
+    #p.show_vectors(pop)
+    p.plot_row(15,1,pop,1, x_all=False)
     pp.show()
 
 
