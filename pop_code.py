@@ -59,6 +59,7 @@ class Population(object):
                         ax=pp.gca()
                         pp.axis([0,self.main_size,0, self.main_size])
                         ax.add_patch(fap((x,y),((x+(self.square_size/4)*x1/ny.sqrt(x1**2+y1**2)),((y+(self.square_size/4)*y1/ny.sqrt(x1**2+y1**2)))), arrowstyle='->',linewidth=0.5,mutation_scale=10))
+                        angle = self.pop_degree(population_code, x, y)
                         self.I.pic() # shows the stimulus
 
                     else:
