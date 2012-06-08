@@ -46,9 +46,13 @@ class Population(object):
         return pop
 
 
-    def show_vectors(self, population_code, all=True):
+    def show_vectors(self, population_code, time_frames, i, all=True):
 
         self.all=all
+        fig = pp.gcf()
+        fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1)
+        pp.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4, hspace=None)
+        pp.locator_params(tight=True, nbins=5)
         h_v_edges = ny.zeros(2)
         for x in ny.arange(0.0,self.main_size):
             for y in ny.arange(0.0,self.main_size):
@@ -58,11 +62,17 @@ class Population(object):
                     y1=ny.sum(multiple[1,:])
 
                     if self.all:
-                        ax=pp.gca()
-                        ax.add_patch(fap((x,y),((x+(self.square_size/4)*x1/ny.sqrt(x1**2+y1**2)),((y+(self.square_size/4)*y1/ny.sqrt(x1**2+y1**2)))), arrowstyle='->',linewidth=0.5,mutation_scale=10))
+#                        ax=pp.gca()
+#                        ax.add_patch(fap((x,y),((x+(self.square_size/4)*x1/ny.sqrt(x1**2+y1**2)),((y+(self.square_size/4)*y1/ny.sqrt(x1**2+y1**2)))), arrowstyle='->',linewidth=0.5,mutation_scale=10))
                         degree = self.pop_degree(population_code, x, y)
                         angle=degree*(180/ny.pi)
                         self.I.pix_wise(x,29-y,angle) # shows the stimulus
+                        pp.xlabel('Pixel')
+                        pp.ylabel('Pixel')
+                        if i>0:
+                            pp.title('After %i model cycles' % i)
+                        else:
+                            pp.title('Model input')
 
 
                     else:
@@ -119,8 +129,12 @@ class Population(object):
                     frame2.axes.get_yaxis().set_visible(False)
 
 
-    def plot_row(self, x, y, population_code, i, x_all=True):
+    def plot_row(self, x, y, population_code, i, time_frames, x_all=True):
         self.all=x_all
+        fig = pp.gcf()
+        fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1)
+        pp.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.6, hspace=0.4)
+        pp.locator_params(tight=True, nbins=5)
         if self.all:
             for x in ny.arange(0.0,self.main_size):
                 angle =(180.0/ny.pi)*self.pop_degree(population_code, x, y)
