@@ -11,6 +11,7 @@ class image(object):
     def __init__(self,main_size,square_size):
         self.main_size=main_size
         self.square_size=square_size
+        self.i=Image.new("RGB",(self.main_size,self.main_size),color=(255,255,255))
 
     def pic(self, angle_outside=135 , angle_inside=180):
         C = ny.genfromtxt("Colormatrix.txt")
@@ -25,18 +26,21 @@ class image(object):
         pp.imshow(i, interpolation="nearest")
 
     def pix_wise(self, x, y, angle):
-        i=Image.new("RGB",(self.main_size+1,self.main_size+1),color=(255,255,255))
         C = ny.genfromtxt("Colormatrix.txt")
         t=ny.round((angle*(2*ny.pi/360))/(1/60.0)).astype(int)
-        im= i.load()
-        im[x,y]=tuple(ny.round(255*C[t, :]).astype(int))
-        pp.imshow(i, interpolation="nearest")
+        #im = self.i
+        im =Image.open("Stimulus.png")
+        pix = im.load()
+        pix[x,y]=tuple(ny.round(255*C[t, :]).astype(int))
+        im.save("Stimulus.png")
+        pp.imshow(im, interpolation="nearest")
+        pp.ylim(0, 29)
 
 
 
 
 if __name__ == '__main__':
     I=image(30,10)
-    I.pix_wise(10,10,0)
+    I.pix_wise(29,29,135)
     pp.show()
     # 0.32243642,  0.67756358,  0.85197259  in: 0.25000442,  0.74999558,  0.49702585

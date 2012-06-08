@@ -31,7 +31,7 @@ class Population(object):
         self.pop_background=[(neurons[i])[135.0] for i in ny.arange(0,len(angle))]
         self.pop_square=[(neurons[i])[180.0] for i in ny.arange(0,len(angle))]
         self.square_x=ny.arange((main_size/2)-(square_size/2),(main_size/2)+(square_size/2)+1)
-        self.square_y=ny.arange((main_size/2)-(square_size/2)+1,(main_size/2)+(square_size/2)+2)
+        self.square_y=ny.arange((main_size/2)-(square_size/2),(main_size/2)+(square_size/2)+1)
 
 
     def initial_pop_code(self):
@@ -42,10 +42,12 @@ class Population(object):
                     pop[x,y,:]=self.pop_square
                 else:
                     pop[x,y,:]=self.pop_background
+
         return pop
 
 
     def show_vectors(self, population_code, all=True):
+
         self.all=all
         h_v_edges = ny.zeros(2)
         for x in ny.arange(0.0,self.main_size):
@@ -57,10 +59,11 @@ class Population(object):
 
                     if self.all:
                         ax=pp.gca()
-                        pp.axis([0,self.main_size,0, self.main_size])
                         ax.add_patch(fap((x,y),((x+(self.square_size/4)*x1/ny.sqrt(x1**2+y1**2)),((y+(self.square_size/4)*y1/ny.sqrt(x1**2+y1**2)))), arrowstyle='->',linewidth=0.5,mutation_scale=10))
-                        angle = self.pop_degree(population_code, x, y)
-                        self.I.pic() # shows the stimulus
+                        degree = self.pop_degree(population_code, x, y)
+                        angle=degree*(180/ny.pi)
+                        self.I.pix_wise(x,29-y,angle) # shows the stimulus
+
 
                     else:
                         r=ny.sqrt((x1**2)+(y1**2))
@@ -137,8 +140,8 @@ class Population(object):
 if __name__ == '__main__':
     p = Population(30, 10, 30)
     pop=p.initial_pop_code()
-    #p.show_vectors(pop)
-    p.plot_row(15,1,pop,1, x_all=False)
+    p.show_vectors(pop)
+    #p.plot_row(15,1,pop,1, x_all=False)
     pp.show()
 
 

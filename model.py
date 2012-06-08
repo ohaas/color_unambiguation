@@ -198,32 +198,32 @@ class Model(object):
 #                pp.title('Model input population code for spatial kernel values: %s=%.2f, size=%.2f, \n res=%.2f and neuron kernel %s=%.2f'\
 #                %  (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res,u"\u03C3", self.gauss_width))
 
-#                pp.figure(2+i)
-#                pop.show_vectors(X[:,:,:,i])
-#                pp.xlabel('Pixel')
-#                pp.ylabel('Pixel')
-#                pp.title('Model output population code for spatial kernel values:%s=%.2f, size=%.2f, \n res=%.2f and neuron kernel %s=%.2f after %i model iterations'\
-#                % (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res,u"\u03C3", self.gauss_width, i) )
-
-                pp.figure(3+self.time_frames+i)
-                pop.plot_row(1,15,X[:,:,:,i],i)
-
-                pp.figure(1)
-                pop.plot_pop(X[:,:,:,i],self.time_frames,i)
-
-            else:
-                pp.figure(1)
-                pop.plot_pop(X[:,:,:,i],self.time_frames,i)
+                pp.figure(2+i)
+                pop.show_vectors(X[:,:,:,i])
+                pp.xlabel('Pixel')
+                pp.ylabel('Pixel')
+                pp.title('Model output population code for spatial kernel values:%s=%.2f, size=%.2f, \n res=%.2f and neuron kernel %s=%.2f after %i model iterations'\
+                % (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res,u"\u03C3", self.gauss_width, i) )
 
 #                pp.figure(3+self.time_frames+i)
 #                pop.plot_row(1,15,X[:,:,:,i],i)
 
-#                pp.figure(2)
-#                pop.show_vectors(self.input[:,:,:,i])
-#                pp.xlabel('Pixel')
-#                pp.ylabel('Pixel')
-#                pp.title('Model input population code for spatial kernel values:\n %s=%.2f, size=%.2f, res=%.2f and neuron kernel %s=%.2f'\
-#                % (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res,u"\u03C3", self.gauss_width) )
+#                pp.figure(1)
+#                pop.plot_pop(X[:,:,:,i],self.time_frames,i)
+#
+            else:
+#                pp.figure(1)
+#                pop.plot_pop(X[:,:,:,i],self.time_frames,i)
+
+#                pp.figure(3+self.time_frames+i)
+#                pop.plot_row(1,15,X[:,:,:,i],i)
+
+                pp.figure(2)
+                pop.show_vectors(self.input[:,:,:,i])
+                pp.xlabel('Pixel')
+                pp.ylabel('Pixel')
+                pp.title('Model input population code for spatial kernel values:\n %s=%.2f, size=%.2f, res=%.2f and neuron kernel %s=%.2f'\
+                % (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res,u"\u03C3", self.gauss_width) )
 
 
             print i
