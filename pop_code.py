@@ -1,16 +1,21 @@
 __author__ = 'ohaas'
 
 import numpy as ny
+import matplotlib as m
 import matplotlib.pyplot as pp
 from matplotlib.patches import FancyArrowPatch as fap
 import Stimulus
 import Neurons
 import math
+import Image, ImageDraw
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+from matplotlib.ticker import LinearLocator, FormatStrFormatter
 
 class Population(object):
 
 
-    def __init__(self, main_size, square_size, gauss_width):
+    def __init__(self, main_size, square_size, gauss_width, angle_outside, angle_inside):
         """
         main_size= IMAGE SIZE SQUARED (main_size x main_size), square_size=STIMULUS SIZE SQUARED,
         start=STIMULUS STARTING POINT SQUARED (lower left stimulus corner), gauss_width= WIDTH OF NEURONAL GAUSS TUNING CURVE
@@ -28,10 +33,11 @@ class Population(object):
         neurons = [Neurons.N(self.width).neuron_gauss(degree) for degree in angle]
 
         #2) NEURONAL ACTIVITY AT POINT X IN DEGREES E.G.: Neuron1.neuron_gauss(X)
-        self.pop_background=[(neurons[i])[135.0] for i in ny.arange(0,len(angle))]
-        self.pop_square=[(neurons[i])[180.0] for i in ny.arange(0,len(angle))]
+        self.pop_background=[(neurons[i])[angle_outside] for i in ny.arange(0,len(angle))]
+        self.pop_square=[(neurons[i])[angle_inside] for i in ny.arange(0,len(angle))]
         self.square_x=ny.arange((main_size/2)-(square_size/2),(main_size/2)+(square_size/2)+1)
         self.square_y=ny.arange((main_size/2)-(square_size/2),(main_size/2)+(square_size/2)+1)
+
 
 
     def initial_pop_code(self):
@@ -51,7 +57,7 @@ class Population(object):
         self.all=all
         fig = pp.gcf()
         fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1)
-        pp.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.4, hspace=None)
+        pp.subplots_adjust(left=None, bottom=None, right=None, top=0.8, wspace=0.4, hspace=0.5)
         pp.locator_params(tight=True, nbins=5)
         h_v_edges = ny.zeros(2)
         for x in ny.arange(0.0,self.main_size):
@@ -86,8 +92,10 @@ class Population(object):
 
     def pop_degree(self, population_code, x , y):
         multiple=ny.multiply(population_code[x,y,:],ny.transpose(self.vec))
+
         x1=ny.sum(multiple[0,:])
         y1=ny.sum(multiple[1,:])
+
         if x1<0:
             angle=(ny.arctan(y1/x1)+ny.pi)
         elif x1>0 and y1>=0:
@@ -107,6 +115,7 @@ class Population(object):
         # get current figure
         fig = pp.gcf()
         frame1 = fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1, frameon=False)
+        pp.subplots_adjust(left=None, bottom=None, right=None, top=0.77, wspace=None, hspace=0.4)
         im = pp.imread('colorspace_polar_z=0.0.jpg')
         im = ny.fliplr(ny.rot90(im, k=2))
         # draw it on the canvas
@@ -120,28 +129,70 @@ class Population(object):
             for y in ny.arange(0.0,self.main_size):
                 if not ny.any(population_code[x,y,:])==0:
                     angle = self.pop_degree(population_code, x, y)
-                    y2=ny.arange(0,1.01,0.01)
+                    y2=ny.arange(0,ny.max(ny.absolute(population_code[x,y,:]))+0.01,0.01) # vector length is maximum of all neurons per pixel! not value for angle direction... change to mean or so???
                     x2=angle+(0.0*y2)
                     frame2 = fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1, polar=True, axisbg='none', frameon=False)
                     frame2.plot(x2,y2,'k')
                     pp.title('After %d Model Cycles' %i)
                     frame2.axes.get_xaxis().set_visible(False)
                     frame2.axes.get_yaxis().set_visible(False)
+        pp.axhline(xmax=1.0, linewidth=0.7, color='w', linestyle='--')
+        y2=ny.arange(0,ny.max(ny.absolute(population_code[:,:,:]))*1.01,0.01)
+        pp.plot(45*(ny.pi/180)+(0.0*y2),y2,'w', linestyle='--')
+        pp.plot(90*(ny.pi/180)+(0.0*y2),y2,'w', linestyle='--')
+        pp.plot(135*(ny.pi/180)+(0.0*y2),y2,'w', linestyle='--')
+        pp.plot(225*(ny.pi/180)+(0.0*y2),y2,'w', linestyle='--')
+        pp.plot(270*(ny.pi/180)+(0.0*y2),y2,'w', linestyle='--')
+        pp.plot(315*(ny.pi/180)+(0.0*y2),y2,'w', linestyle='--')
+        #pp.axvline(ymin=0.04, ymax=0.97,linewidth=0.7, color='grey', linestyle='--')
+
+    def plot_cartesian_pop(self, population_code, time_frames, i):
+        """
+        PLOT POPULATION CODE FOR ALL PIXELS:
+        """
+        for x in ny.arange(0.0,self.main_size):
+            for y in ny.arange(0.0,self.main_size):
+                if not ny.any(population_code[x,y,:])==0:
+
+                    x1=ny.arange(0,8)
+                    y1=[population_code[x,y,k] for k in x1]
+                    for a in ny.arange(0,8):
+                        if y1[a]<0:
+                            if a in ny.arange(0,4):
+                                y1[a+4]=y1[a+4]-y1[a]
+                                y1[a]=0
+                            else:
+                                y1[a-4]=y1[a-4]-y1[a]
+                                y1[a]=0
+
+                    ax=pp.subplot(math.floor(time_frames/3.0)+1,3,i+1)
+                    ax.plot(x1,y1)
+                    ax.grid(True)
+                    #ax.xaxis.set_ticks_position("top")
+                    pp.title('Neuron number \n After %d Model Cycles' %i)
+                    pp.ylabel('Neuronal activation')
+                    #pp.ylim(0.01,1.01)
+
+                    #pp.show()
 
 
     def plot_row(self, x, y, population_code, i, time_frames, x_all=True):
         self.all=x_all
         fig = pp.gcf()
         fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1)
-        pp.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.6, hspace=0.4)
-        pp.locator_params(tight=True, nbins=5)
+        pp.grid(True)
+        pp.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=0.6, hspace=0.5)
+
+        #pp.locator_params(tight=True, nbins=5)
         if self.all:
             for x in ny.arange(0.0,self.main_size):
                 angle =(180.0/ny.pi)*self.pop_degree(population_code, x, y)
                 pp.scatter(x,angle)
+                pp.ylim(0,360)
                 pp.title('After %d Model Cycles' %i)
                 pp.xlabel('all x pixels for y=%d' %y)
-                pp.ylabel('direction in color space in degree')
+                pp.ylabel('degree')
+
         else:
             for y in ny.arange(0.0,self.main_size):
                 angle = (180/ny.pi)*self.pop_degree(population_code, x, y)
@@ -150,11 +201,84 @@ class Population(object):
                 pp.xlabel('all y pixels for x=%d' %x)
                 pp.ylabel('direction in color space in degree')
 
+    def heat_map(self, population_code, i, time_frames, A):
+
+        for x in ny.arange(0.0,self.main_size):
+            for y in ny.arange(0.0,self.main_size):
+                A[x,y,i] = self.pop_degree(population_code, x, y)
+
+        if i>0:
+
+            D=(A[:,:,i-1]*180.0/ny.pi)-(A[:,:,i]*180.0/ny.pi)
+            fig = pp.gcf()
+            frame1 = fig.add_subplot(math.floor(time_frames/3.0)+1,3,i)
+
+            pp.imshow(D, interpolation='nearest', figure=frame1, vmin=-90, vmax=90)
+            frame2 = fig.add_subplot(math.floor(time_frames/3.0),3,i)
+            range=ny.arange((self.main_size/2)-(self.square_size/2), (self.main_size/2)+(self.square_size/2),0.001)
+            start=(self.main_size/2)-(self.square_size/2)+(0*range)
+            stop=(self.main_size/2)+(self.square_size/2)+(0*range)
+            frame2.plot(range,start, 'w')
+            frame2.plot(range,stop, 'w')
+            frame2.plot(start,range, 'w')
+            frame2.plot(stop,range, 'w')
+            pp.xlim(0,29)
+            pp.ylim(0,29)
+            pp.title('Change in color-space-direction \n from model cycle %i to %i' %((i-1), i))
+            pp.xlabel('pixel')
+            pp.ylabel('pixel')
+            pp.colorbar()
+
+    def twoD_activation(self, population_code, c, i):
+        for k in ny.arange(0,8):
+            fig = pp.gcf()
+            frame1 = fig.add_subplot(6,8,(c*8)+1+k)
+            pp.imshow(population_code[:,:,k],figure=frame1, vmin=ny.min(population_code), vmax=ny.max(population_code), interpolation='nearest')
+            frame2 = fig.add_subplot(6,8,(c*8)+1+k)
+            range=ny.arange((self.main_size/2)-(self.square_size/2), (self.main_size/2)+(self.square_size/2),0.001)
+            start=(self.main_size/2)-(self.square_size/2)+(0*range)
+            stop=(self.main_size/2)+(self.square_size/2)+(0*range)
+            frame2.plot(range,start, 'w')
+            frame2.plot(range,stop, 'w')
+            frame2.plot(start,range, 'w')
+            frame2.plot(stop,range, 'w')
+            pp.xlim(0,29)
+            pp.ylim(0,29)
+
+
+            if not k:
+
+                if not c:
+                    pp.ylabel('After 1st \n stage of V1')
+                    pp.title('Neuron %i' %k )
+                    pp.suptitle('Neuronal activations in %i. model cycle' %i)
+                elif c==1:
+                    pp.ylabel('After 2nd \n stage of V1')
+                elif c==2:
+                    pp.ylabel('After 3rd \n stage of V1')
+                elif c==3:
+                    pp.ylabel('After 1st \n stage of MT')
+                elif c==4:
+                    pp.ylabel('After 2nd \n stage of MT')
+                else:
+                    pp.ylabel('After 3rd \n stage of MT')
+                    pp.xlabel('pixel')
+
+            if not c:
+                pp.title('Neuron %i (%i$^\circ$)' %(k,k*45) )
+            if c==5:
+                pp.xlabel('pixel')
+
+            pp.colorbar()
+
+
+
+
 
 if __name__ == '__main__':
-    p = Population(30, 10, 30)
+    p = Population(30, 10, 30, 135, 90)
     pop=p.initial_pop_code()
-    p.show_vectors(pop)
+    p.show_vectors(pop,0,0)
     #p.plot_row(15,1,pop,1, x_all=False)
     pp.show()
 
