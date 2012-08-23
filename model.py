@@ -26,11 +26,23 @@ def get_gauss_kernel(sigma, samples):
     B=A*b
     return x,y,B
 
+def get_dog_kernel(kernel_sigma1, kernel_sigma2, samples, kernel_scale):
+
+    # return a 2d DoG Kernel
+
+    x1,y1,DoG1 = get_gauss_kernel(kernel_sigma1, samples)
+    x2,y2,DoG2 = get_gauss_kernel(kernel_sigma2, samples)
+    A=10
+    return A*(DoG1 - (kernel_scale*DoG2))
+
 
 class Stage(object):
-    def __init__(self, Gx, C):
+    def __init__(self, Gx, DoG,  C, N_number, N_angles):
         self.Gx = Gx
+        self.DoG=DoG
         self.C = C
+        self.N_number=N_number
+        self.N_angles=N_angles
 
     def do_v1(self, net_in, net_fb):
         v1_t= net_in + (self.C * net_fb * net_in)
@@ -38,27 +50,25 @@ class Stage(object):
         #v1_t /= ny.max(ny.absolute(v1_t))
         return v1_t
 
-    def do_v2(self, v1_t):
 
-        x = v1_t**2
+    def do_v2(self, v1_t):
+        x = v1_t#**2
         if not len (self.Gx):
             return x
-
-
         v2_t = ny.zeros_like(v1_t)
         for n in ny.arange(0, v1_t.shape[2]):
-            v2_t[:,:,n] = convolve2d (x[:,:,n], self.Gx, 'same',boundary='symm')
+            v2_t[:,:,n] = convolve2d(convolve2d (v1_t[:,:,n], self.DoG, 'same',boundary='symm'), self.Gx, 'same',boundary='symm')
 
-        #v2_t /= ny.max(ny.absolute(v2_t))
+        v2_t /= ny.max(v2_t)
         return v2_t
 
-    def do_v3(self, v2_t, i):
+
+    def do_v3(self, v2_t):
 
         s=v2_t.shape
         N=ny.zeros_like(v2_t)
         M=N
-        R=2  # CONSIDERED SURROUND (IN PIXEL) IN EACH DIRECTION
-        #j=i  # model cycle
+        R=1  # CONSIDERED SURROUND (IN PIXEL) IN EACH DIRECTION
 
         # x,y IS THE AREA WHERE THE SURROUND R CAN BE CONSIDERED.
         a = ny.arange(R,s[0]-R)
@@ -96,7 +106,7 @@ class Stage(object):
                 m=m.flatten()
                 n=n.flatten()
 
-                for k in ny.arange(0,8): # pixel-surround-average calculation per neuron (0-7)
+                for k in ny.arange(0,self.N_number): # pixel-surround-average calculation per neuron (0-7)
                     N[x[i],y[i],k]=math.fsum(v2_t[m,n,k])
                     M[x[i],y[i],k]=N[x[i],y[i],k]/((R+R+1)**2)
 
@@ -106,26 +116,27 @@ class Stage(object):
                    # N[x1[i],y1[i],k]=v2_t[x1[i],y1[i],k]*((R+R+1)**2)
                 M[x1[i],y1[i],:]=v2_t[x1[i],y1[i],:]
 
-        v3_t = v2_t+(v2_t-(1.0*M))#/ny.max(ny.absolute(v2_t-M))#+4.0)/7.0)*(v2_t-(0.3*M)))#(v2_t-(0.3*M))#(((ny.exp(-j/2.3)+0.00)/1.00)*(v2_t-(0.3*M)))
-        v3_t /= ny.max(ny.absolute(v3_t))
+        v3_t = v2_t+(2*(v2_t-M))#/ny.max(ny.absolute(v2_t-M))#+4.0)/7.0)*(v2_t-(0.3*M)))#(v2_t-(0.3*M))#(((ny.exp(-j/2.3)+0.00)/1.00)*(v2_t-(0.3*M)))
+
+        v3_t /= 1/(0.01+ny.absolute(v2_t-M))
 
         return v3_t
 
     def do_all(self, net_in, net_fb, i, main_size, square_size, gauss_width, angle_outside, angle_inside, Channel):
-        pop = pc.Population(main_size, square_size, gauss_width, angle_outside, angle_inside)
+        pop = pc.Population(main_size, square_size, gauss_width, self.N_number, self.N_angles, angle_outside, angle_inside)
         v1_t = self.do_v1(net_in, net_fb)
-        #v2_t = self.do_v2(v1_t)
-        v3_t = self.do_v3(v1_t, i)
+        v2_t = self.do_v2(v1_t)
+        v3_t = self.do_v3(v2_t, i)
 
-        pp.figure(5+i-1)
-        if Channel==1:
-            pop.twoD_activation(v1_t, 0, i)
-            #pop.twoD_activation(v2_t, 1, i)
-            pop.twoD_activation(v3_t, 2, i)
-        if Channel==2:
-            pop.twoD_activation(v1_t, 3, i)
-            #pop.twoD_activation(v2_t, 4, i)
-            pop.twoD_activation(v3_t, 5, i)
+#        pp.figure(5+i-1)
+#        if Channel==1:
+#            pop.twoD_activation(v1_t, 0, i)
+#            pop.twoD_activation(v2_t, 1, i)
+#            pop.twoD_activation(v3_t, 2, i)
+#        if Channel==2:
+#            pop.twoD_activation(v1_t, 3, i)
+#            pop.twoD_activation(v2_t, 4, i)
+#            pop.twoD_activation(v3_t, 5, i)
         return v3_t
 
 
@@ -145,23 +156,34 @@ class Model(object):
         self.angle_outside = cfg.getint('Input', 'angle_outside')
         self.angle_inside = cfg.getint('Input', 'angle_inside')
         self.gauss_width = cfg.getfloat('PopCode', 'neuron_sigma')
+        self.N_number=cfg.getint('PopCode','number_of_neurons')
+        N_angle=ny.zeros(self.N_number)
+        for i in ny.arange(len(N_angle)):
+            N_angle[i]=cfg.getfloat('PopCode','neuronal_tuning_angle_%i' %i)
+        angle_num=ny.arange(0,self.N_number)
+        self.N_angles=[N_angle[num] for num in angle_num]
+        print self.N_angles
 
         v1_C = cfg.getfloat('V1', 'C')
         self.mt_kernel_sigma =  cfg.getfloat('MT', 'kernel_sigma')
         self.mt_kernel_samples =  cfg.getfloat('MT', 'kernel_samples')
+        self.kernel_sigma1 =  cfg.getfloat('MT', 'kernel_sigma1')
+        self.kernel_sigma2 =  cfg.getfloat('MT', 'kernel_sigma2')
+        self.kernel_scale =  cfg.getfloat('MT', 'kernel_scale')
 
         self.x,self.y,self.mt_gauss = get_gauss_kernel(self.mt_kernel_sigma, self.mt_kernel_samples)
+        self.DoG=get_dog_kernel(self.kernel_sigma1, self.kernel_sigma2, self.mt_kernel_sigma, self.kernel_scale)
 
 
-        self.V1 = Stage([], v1_C)
-        self.MT = Stage(self.mt_gauss, 0)
+        self.V1 = Stage([],self.DoG, v1_C, self.N_number, self.N_angles)
+        self.MT = Stage(self.mt_gauss,self.DoG, 0, self.N_number, self.N_angles)
 
 
     def create_input(self):
         """
         definition of initial population codes for different time steps (is always the same one!!!)
         """
-        j = pc.Population(self.main_size, self.square_size, self.gauss_width, self.angle_outside, self.angle_inside)
+        j = pc.Population(self.main_size, self.square_size, self.gauss_width, self.N_number, self.N_angles, self.angle_outside, self.angle_inside)
         I= j.initial_pop_code()
 
         return I
@@ -169,9 +191,9 @@ class Model(object):
 
     def run_model_full(self):
         self.input = self.create_input()
-        pop = pc.Population(self.main_size, self.square_size, self.gauss_width, self.angle_outside, self.angle_inside)
-        X = ny.zeros((self.main_size, self.main_size, 8, self.time_frames+1))
-        FB=ny.zeros((self.main_size, self.main_size, 8, self.time_frames+1))
+        pop = pc.Population(self.main_size, self.square_size, self.gauss_width, self.N_number, self.N_angles, self.angle_outside, self.angle_inside)
+        X = ny.zeros((self.main_size, self.main_size, self.N_number, self.time_frames+1))
+        FB=ny.zeros((self.main_size, self.main_size, self.N_number, self.time_frames+1))
         c=0
         for i in ny.arange(0,self.time_frames+1):
             if not i: # weil i=0 ist false
@@ -197,7 +219,7 @@ class Model(object):
 
 
         #A = ny.zeros((self.main_size,self.main_size,self.time_frames+1))
-        pop = pc.Population(self.main_size, self.square_size, self.gauss_width, self.angle_outside, self.angle_inside)
+        pop = pc.Population(self.main_size, self.square_size, self.gauss_width, self.N_number, self.N_angles, self.angle_outside, self.angle_inside)
         X,FB = self.run_model_full ()
 
         for i in ny.arange(0,self.time_frames+1):

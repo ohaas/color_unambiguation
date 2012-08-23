@@ -16,10 +16,11 @@ def gauss(x, mu, sigma):
 class N(object):
 
 
-    def __init__(self, sigma, A=1):
+    def __init__(self, sigma, N_number,N_angles, A=1):
         self.sigma=sigma
         self.A=A
-
+        self.N_number=N_number
+        self.N_angles=N_angles
 
     def neuron_gauss(self, mu):
         y=ny.zeros(361.0)
@@ -29,12 +30,13 @@ class N(object):
         return y
 
     def plot_act(self):
-        angle = ny.arange(0.0, 360, 45.0)
-        neurons = [N(self.sigma).neuron_gauss(degree) for degree in angle]
+        angle=self.N_angles
+        #angle = ny.arange(0.0, 360, 360.0/self.N_number)
+        neurons = [N(self.sigma, self.N_number, self.N_angles).neuron_gauss(degree) for degree in angle]
         x3=ny.arange(0,2*ny.pi,2*ny.pi/361)
         ax = pp.subplot(111,polar=True)
         for i in ny.arange(0,len(angle)):
-            ax.plot(x3,neurons[i], label='$neuron$ $%i$ $(\mu=%i\degree)$' %(i+1,i*45))
+            ax.plot(x3,neurons[i], label='$neuron$ $%i$ $(\mu=%i\degree)$' %(i+1,angle[i]))#i*(360.0/self.N_number)))
         pp.xlim(0,360)
         y=ny.arange(0,1.01,0.01)
         x=0.0*y
@@ -55,5 +57,6 @@ class N(object):
 
 
 if __name__ == '__main__':
-    N(30.0).plot_act()
+    angles=ny.array((0,80,90,100,180,260,270,280))
+    N(30.0,8, angles).plot_act()
     pp.show()

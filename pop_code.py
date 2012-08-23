@@ -11,11 +11,13 @@ import Image, ImageDraw
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpl_toolkits.axes_grid1 import AxesGrid
 
 class Population(object):
 
 
-    def __init__(self, main_size, square_size, gauss_width, angle_outside, angle_inside):
+    def __init__(self, main_size, square_size, gauss_width, N_number, N_angles, angle_outside, angle_inside):
         """
         main_size= IMAGE SIZE SQUARED (main_size x main_size), square_size=STIMULUS SIZE SQUARED,
         start=STIMULUS STARTING POINT SQUARED (lower left stimulus corner), gauss_width= WIDTH OF NEURONAL GAUSS TUNING CURVE
@@ -24,24 +26,30 @@ class Population(object):
         self.square_size = square_size
         self.I = Stimulus.image(main_size,square_size)
         self.width=gauss_width
+        self.N_number=N_number
+        self.N_angles=N_angles
 
-        self.vec = ny.matrix(((1,0), (1,1), (0,1), (-1,1), (-1,0), (-1,-1), (0,-1), (1,-1)))
-        self.vec1 = ny.matrix((0.0,45.0,90.0,135.0,180.0,225.0,270.0,315.0))
 
         #1) NEURONAL RESPONSES FOR NEURONS neuron.N(maximum_location_in_degrees, activation_width, Amplitude=1):
-        angle = ny.arange(0.0, 360, 45.0)
-        neurons = [Neurons.N(self.width).neuron_gauss(degree) for degree in angle]
+        angle=self.N_angles
+        #angle = ny.arange(0.0, 360, 360.0/self.N_number)
+        self.neurons = [Neurons.N(self.width, self.N_number, self.N_angles).neuron_gauss(degree) for degree in angle]
+        self.vec = ny.matrix([[ny.cos(fi*(ny.pi/180)), ny.sin(fi*(ny.pi/180))] for fi in angle])
 
-        #2) NEURONAL ACTIVITY AT POINT X IN DEGREES E.G.: Neuron1.neuron_gauss(X)
-        self.pop_background=[(neurons[i])[angle_outside] for i in ny.arange(0,len(angle))]
-        self.pop_square=[(neurons[i])[angle_inside] for i in ny.arange(0,len(angle))]
+
+        #2) NEURONAL ACTIVITY AT POINT i IN DEGREES E.G.: Neuron1.neuron_gauss(i)
+        self.pop_background=[(self.neurons[i])[angle_outside] for i in ny.arange(0,len(angle))]
+        self.pop_square=[(self.neurons[i])[angle_inside] for i in ny.arange(0,len(angle))]
         self.square_x=ny.arange((main_size/2)-(square_size/2),(main_size/2)+(square_size/2)+1)
         self.square_y=ny.arange((main_size/2)-(square_size/2),(main_size/2)+(square_size/2)+1)
 
+    def neuronal_activity(self, angle):
+        activity=[(self.neurons[i])[angle] for i in ny.arange(0,len(self.N_angles))]
+        return activity
 
 
     def initial_pop_code(self):
-        pop=ny.zeros((self.main_size, self.main_size, 8))
+        pop=ny.zeros((self.main_size, self.main_size, self.N_number))
         for x in ny.arange(0.0, self.main_size):
             for y in ny.arange(0.0, self.main_size):
                 if x in self.square_x and y in self.square_y:
@@ -91,6 +99,7 @@ class Population(object):
         return h_v_edges
 
     def pop_degree(self, population_code, x , y):
+
         multiple=ny.multiply(population_code[x,y,:],ny.transpose(self.vec))
 
         x1=ny.sum(multiple[0,:])
@@ -154,15 +163,15 @@ class Population(object):
             for y in ny.arange(0.0,self.main_size):
                 if not ny.any(population_code[x,y,:])==0:
 
-                    x1=ny.arange(0,8)
+                    x1=ny.arange(0,self.N_number)
                     y1=[population_code[x,y,k] for k in x1]
-                    for a in ny.arange(0,8):
+                    for a in x1:
                         if y1[a]<0:
-                            if a in ny.arange(0,4):
-                                y1[a+4]=y1[a+4]-y1[a]
+                            if a in ny.arange(0,self.N_number/2.0):
+                                y1[a+(self.N_number/2)]-=y1[a]
                                 y1[a]=0
                             else:
-                                y1[a-4]=y1[a-4]-y1[a]
+                                y1[a-(self.N_number/2)]-=y1[a]
                                 y1[a]=0
 
                     ax=pp.subplot(math.floor(time_frames/3.0)+1,3,i+1)
@@ -177,6 +186,7 @@ class Population(object):
 
 
     def plot_row(self, x, y, population_code, i, time_frames, x_all=True):
+
         self.all=x_all
         fig = pp.gcf()
         fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1)
@@ -212,7 +222,6 @@ class Population(object):
             D=(A[:,:,i-1]*180.0/ny.pi)-(A[:,:,i]*180.0/ny.pi)
             fig = pp.gcf()
             frame1 = fig.add_subplot(math.floor(time_frames/3.0)+1,3,i)
-
             pp.imshow(D, interpolation='nearest', figure=frame1, vmin=-90, vmax=90)
             frame2 = fig.add_subplot(math.floor(time_frames/3.0),3,i)
             range=ny.arange((self.main_size/2)-(self.square_size/2), (self.main_size/2)+(self.square_size/2),0.001)
@@ -230,56 +239,85 @@ class Population(object):
             pp.colorbar()
 
     def twoD_activation(self, population_code, c, i):
-        for k in ny.arange(0,8):
-            fig = pp.gcf()
-            frame1 = fig.add_subplot(6,8,(c*8)+1+k)
-            pp.imshow(population_code[:,:,k],figure=frame1, vmin=ny.min(population_code), vmax=ny.max(population_code), interpolation='nearest')
-            frame2 = fig.add_subplot(6,8,(c*8)+1+k)
-            range=ny.arange((self.main_size/2)-(self.square_size/2), (self.main_size/2)+(self.square_size/2),0.001)
-            start=(self.main_size/2)-(self.square_size/2)+(0*range)
-            stop=(self.main_size/2)+(self.square_size/2)+(0*range)
-            frame2.plot(range,start, 'w')
-            frame2.plot(range,stop, 'w')
-            frame2.plot(start,range, 'w')
-            frame2.plot(stop,range, 'w')
-            pp.xlim(0,29)
-            pp.ylim(0,29)
+
+        fig = pp.gcf()
+        pp.suptitle('Neuronal activations in %i. model cycle' %i)
+        #frame1 = fig.add_subplot(6,self.N_number,(c*self.N_number)+1+k)
+        grid = AxesGrid(fig, int(''.join(map(str,[6,1,c+1]))),
+            nrows_ncols = (1, self.N_number),
+            axes_pad = 0.0,
+            share_all=True,
+            #label_mode = "1",
+            cbar_size="7%",
+            cbar_mode="single",
+        )
+        range=ny.arange((self.main_size/2)-(self.square_size/2), (self.main_size/2)+(self.square_size/2),0.001)
+        start=(self.main_size/2)-(self.square_size/2)+(0*range)
+        stop=(self.main_size/2)+(self.square_size/2)+(0*range)
+        for k in ny.arange(0,self.N_number):
+            im=grid[k].imshow(population_code[:,:,k],origin="lower",  vmin=ny.min(population_code), vmax=ny.max(population_code), interpolation='nearest')
+            grid[k].plot(range,start, 'w')
+            grid[k].plot(range,stop, 'w')
+            grid[k].plot(start,range, 'w')
+            grid[k].plot(stop,range, 'w')
+            grid[k].set_xticks(ny.arange(0,29,10))
+            grid[k].set_yticks(ny.arange(0,29,10))
+
+
 
 
             if not k:
 
                 if not c:
-                    pp.ylabel('After 1st \n stage of V1')
-                    pp.title('Neuron %i' %k )
-                    pp.suptitle('Neuronal activations in %i. model cycle' %i)
+                    grid[k].axes.yaxis.set_label_position('left')
+                    grid[k].axes.yaxis.set_label_text('After 1st \n stage of V1')
+                    grid[k].axes.xaxis.set_label_position('top')
+                    grid[k].axes.xaxis.set_label_text('Neuron %i \n (%.1f$^\circ$)' %(k,k*(360.0/self.N_number)))
+
                 elif c==1:
-                    pp.ylabel('After 2nd \n stage of V1')
+                    grid[k].axes.yaxis.set_label_position('left')
+                    grid[k].axes.yaxis.set_label_text('After 2nd \n stage of V1')
                 elif c==2:
-                    pp.ylabel('After 3rd \n stage of V1')
+                    grid[k].axes.yaxis.set_label_position('left')
+                    grid[k].axes.yaxis.set_label_text('After 3rd \n stage of V1')
                 elif c==3:
-                    pp.ylabel('After 1st \n stage of MT')
+                    grid[k].axes.yaxis.set_label_position('left')
+                    grid[k].axes.yaxis.set_label_text('After 1st \n stage of MT')
                 elif c==4:
-                    pp.ylabel('After 2nd \n stage of MT')
+                    grid[k].axes.yaxis.set_label_position('left')
+                    grid[k].axes.yaxis.set_label_text('After 2nd \n stage of MT')
                 else:
-                    pp.ylabel('After 3rd \n stage of MT')
-                    pp.xlabel('pixel')
+                    grid[k].axes.yaxis.set_label_position('left')
+                    grid[k].axes.yaxis.set_label_text('After 3rd \n stage of MT')
+                    grid[k].axes.xaxis.set_label_position('top')
+                    grid[k].axes.xaxis.set_label_text('pixel')
 
-            if not c:
-                pp.title('Neuron %i (%i$^\circ$)' %(k,k*45) )
+
+            if not c and k:
+                grid[k].axes.xaxis.set_label_position('top')
+                grid[k].axes.xaxis.set_label_text('Neuron %i \n (%.1f$^\circ$)' %(k,k*(360.0/self.N_number)))
             if c==5:
-                pp.xlabel('pixel')
+                grid[k].axes.xaxis.set_label_position('bottom')
+                grid[k].axes.xaxis.set_label_text('pixel')
 
-            pp.colorbar()
+
+
+            grid.cbar_axes[0].colorbar(im)
+
 
 
 
 
 
 if __name__ == '__main__':
-    p = Population(30, 10, 30, 135, 90)
+    angles=ny.array((0,20,40,60,90,120,140,160,180,200,220,240,270,300,320,340))
+    p = Population(30, 4, 30, 16, angles, 45, 90)
+    print 30, 4, 30, 16, angles, 45, 90
     pop=p.initial_pop_code()
-    p.show_vectors(pop,0,0)
-    #p.plot_row(15,1,pop,1, x_all=False)
+    #p.show_vectors(pop,0,0)
+    p.plot_row(15,1,pop,1,1, x_all=False)
+    #p.twoD_activation(pop,5,1)
+
     pp.show()
 
 
