@@ -22,7 +22,6 @@ def get_gauss_kernel(sigma, samples):
     r = ny.linspace(-p, p, samples)
     x,y = ny.meshgrid(r, r)
     b=bivariate_normal(x,y,sigma,sigma)
-<<<<<<< HEAD
     A=(1/ny.max(b))
     B=A*b
     return x,y,B
@@ -43,33 +42,13 @@ def get_gauss_kernel(sigma, samples):
 
 class Stage(object):
     def __init__(self, Gx, C, N_number, N_angles):
-=======
-    A=(1/ny.sum(b))
-    B=A*b
-    return x,y,B
-
-def get_dog_kernel(kernel_sigma1, kernel_sigma2, samples, kernel_scale):
-
-    # return a 2d DoG Kernel
-
-    x1,y1,DoG1 = get_gauss_kernel(kernel_sigma1, samples)
-    x2,y2,DoG2 = get_gauss_kernel(kernel_sigma2, samples)
-    A=10
-    return A*(DoG1 - (kernel_scale*DoG2))
-
-
-class Stage(object):
-    def __init__(self, Gx, DoG,  C, N_number, N_angles):
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
         self.Gx = Gx
-        self.DoG=DoG
         self.C = C
         self.N_number=N_number
         self.N_angles=N_angles
 
     def do_v1(self, net_in, net_fb):
         v1_t= net_in + (self.C * net_fb * net_in)
-<<<<<<< HEAD
 
         #v1_t /= ny.max(ny.absolute(v1_t))
         return v1_t
@@ -77,41 +56,23 @@ class Stage(object):
 
     def do_v2(self, v1_t):
         x = v1_t**2
-=======
-
-        #v1_t /= ny.max(ny.absolute(v1_t))
-        return v1_t
-
-
-    def do_v2(self, v1_t):
-        x = v1_t#**2
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
         if not len (self.Gx):
             return x
         v2_t = ny.zeros_like(v1_t)
         for n in ny.arange(0, v1_t.shape[2]):
-<<<<<<< HEAD
             v2_t[:,:,n] = convolve2d (v1_t[:,:,n], self.Gx, 'same',boundary='symm')
 
         #v2_t /= ny.max(v2_t)
-=======
-            v2_t[:,:,n] = convolve2d(convolve2d (v1_t[:,:,n], self.DoG, 'same',boundary='symm'), self.Gx, 'same',boundary='symm')
-
-        v2_t /= ny.max(v2_t)
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
         return v2_t
 
 
     def do_v3(self, v2_t):
 
         s=v2_t.shape
+<<<<<<< HEAD
         N=ny.zeros_like(v2_t)
         M=N
-<<<<<<< HEAD
         R=7  # CONSIDERED SURROUND (IN PIXEL) IN EACH DIRECTION
-=======
-        R=1  # CONSIDERED SURROUND (IN PIXEL) IN EACH DIRECTION
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
 
         # x,y IS THE AREA WHERE THE SURROUND R CAN BE CONSIDERED.
         a = ny.arange(R,s[0]-R)
@@ -159,23 +120,41 @@ class Stage(object):
                    # N[x1[i],y1[i],k]=v2_t[x1[i],y1[i],k]*((R+R+1)**2)
                 M[x1[i],y1[i],:]=v2_t[x1[i],y1[i],:]
 
-<<<<<<< HEAD
         v3_t = v2_t+v2_t+(v2_t-(1*M))#/ny.max(ny.absolute(v2_t-M))#+4.0)/7.0)*(v2_t-(0.3*M)))#(v2_t-(0.3*M))#(((ny.exp(-j/2.3)+0.00)/1.00)*(v2_t-(0.3*M)))
 
         v3_t /= (0.01+ny.max(ny.abs(v3_t)))
+
 =======
-        v3_t = v2_t+(2*(v2_t-M))#/ny.max(ny.absolute(v2_t-M))#+4.0)/7.0)*(v2_t-(0.3*M)))#(v2_t-(0.3*M))#(((ny.exp(-j/2.3)+0.00)/1.00)*(v2_t-(0.3*M)))
+        r=ny.reshape(v2_t,(s[0]*s[1],s[2]))
+        m=ny.mean(r,axis=0)
+        M=ny.zeros_like(v2_t)
 
-        v3_t /= 1/(0.01+ny.absolute(v2_t-M))
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
+        for x in ny.arange(0.0,s[0]):
+            for y in ny.arange(0.0,s[0]):
+                if not ny.any(v2_t[x,y,:])==0:
+                    M[x,y,:]=m
 
+        N=ny.zeros_like(v2_t)
+        R=2
+
+        for x in ny.arange(0.0,s[0]):
+            for y in ny.arange(0.0,s[0]):
+                if x in ny.arange(R,s[0]-R) and y in ny.arange(R,s[0]-R):
+                    for a in ny.arange(x-R,x+R+1):
+                        for b in ny.arange(y-R,y+R+1):
+                            N[x,y,:]+=v2_t[a,b,:]
+                else:
+                    N[x,y,:]=(((R*2)+1)**2)*v2_t[x,y,:]
+                M[x,y,:]=N[x,y,:]/(((R*2)+1)**2)
+        v3_t=M
+        #v3_t=ny.divide(v2_t-M,0.01+N)
+>>>>>>> e55b40aded955d9d3bff44dbe26bbc0613f93a0f
         return v3_t
 
     def do_all(self, net_in, net_fb, i, main_size, square_size, gauss_width, angle_outside, angle_inside, Channel):
         pop = pc.Population(main_size, square_size, gauss_width, self.N_number, self.N_angles, angle_outside, angle_inside)
         v1_t = self.do_v1(net_in, net_fb)
         v2_t = self.do_v2(v1_t)
-<<<<<<< HEAD
         v3_t = self.do_v3(v2_t)
 
 
@@ -189,19 +168,6 @@ class Stage(object):
 #                pop.twoD_activation(v1_t, 3, i)
 #                pop.twoD_activation(v2_t, 4, i)
 #                pop.twoD_activation(v3_t, 5, i)
-=======
-        v3_t = self.do_v3(v2_t, i)
-
-#        pp.figure(5+i-1)
-#        if Channel==1:
-#            pop.twoD_activation(v1_t, 0, i)
-#            pop.twoD_activation(v2_t, 1, i)
-#            pop.twoD_activation(v3_t, 2, i)
-#        if Channel==2:
-#            pop.twoD_activation(v1_t, 3, i)
-#            pop.twoD_activation(v2_t, 4, i)
-#            pop.twoD_activation(v3_t, 5, i)
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
         return v3_t
 
 
@@ -232,7 +198,6 @@ class Model(object):
         v1_C = cfg.getfloat('V1', 'C')
         self.mt_kernel_sigma =  cfg.getfloat('MT', 'kernel_sigma')
         self.mt_kernel_samples =  cfg.getfloat('MT', 'kernel_samples')
-<<<<<<< HEAD
         self.mt_kernel_size = cfg.getfloat('MT', 'kernel_size')
         self.mt_kernel_res = cfg.getfloat('MT', 'kernel_res')
         self.kernel_sigma1 =  cfg.getfloat('MT', 'kernel_sigma1')
@@ -244,18 +209,6 @@ class Model(object):
 
         self.V1 = Stage([],v1_C, self.N_number, self.N_angles)
         self.MT = Stage(self.mt_gauss, 0, self.N_number, self.N_angles)
-=======
-        self.kernel_sigma1 =  cfg.getfloat('MT', 'kernel_sigma1')
-        self.kernel_sigma2 =  cfg.getfloat('MT', 'kernel_sigma2')
-        self.kernel_scale =  cfg.getfloat('MT', 'kernel_scale')
-
-        self.x,self.y,self.mt_gauss = get_gauss_kernel(self.mt_kernel_sigma, self.mt_kernel_samples)
-        self.DoG=get_dog_kernel(self.kernel_sigma1, self.kernel_sigma2, self.mt_kernel_sigma, self.kernel_scale)
-
-
-        self.V1 = Stage([],self.DoG, v1_C, self.N_number, self.N_angles)
-        self.MT = Stage(self.mt_gauss,self.DoG, 0, self.N_number, self.N_angles)
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
 
 
     def create_input(self):
@@ -296,13 +249,12 @@ class Model(object):
 
     def integrated_motion_direction(self):
 
-
 <<<<<<< HEAD
+
         A = ny.zeros((self.main_size,self.main_size,self.time_frames+1))
-=======
-        #A = ny.zeros((self.main_size,self.main_size,self.time_frames+1))
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
         pop = pc.Population(self.main_size, self.square_size, self.gauss_width, self.N_number, self.N_angles, self.angle_outside, self.angle_inside)
+=======
+>>>>>>> e55b40aded955d9d3bff44dbe26bbc0613f93a0f
         X,FB = self.run_model_full ()
 
         for i in ny.arange(0,self.time_frames+1):
@@ -324,29 +276,8 @@ class Model(object):
                 pp.figure(4)
                 pop.plot_row(1,15,X[:,:,:,i],i, self.time_frames)
 
-=======
-
-#                pp.figure(3)
-#                pop.show_vectors(X[:,:,:,i],self.time_frames,i)
-
-                pp.figure(1)
-                pop.plot_pop(X[:,:,:,i],self.time_frames,i)
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
-
-                pp.figure(2)
-                pop.plot_cartesian_pop(X[:,:,:,i],self.time_frames,i)
-
-#                pp.figure(3)
-#                pop.heat_map(X[:,:,:,i], i, self.time_frames, A)
-
-                pp.figure(4)
-                pop.plot_row(1,15,X[:,:,:,i],i, self.time_frames)
-
-#                pp.figure(5)
-#                pop.twoD_activation(X[:,:,:,i], i, self.time_frames)
 
             else:
-<<<<<<< HEAD
 #                pp.figure(1)
 #                pop.show_vectors(X[:,:,:,i],self.time_frames,i)
 
@@ -358,27 +289,10 @@ class Model(object):
 #                pp.figure(3)
 #                pop.plot_cartesian_pop(X[:,:,:,i],self.time_frames,i)
 #
-=======
-                pp.figure(1)
-                pop.plot_pop(X[:,:,:,i],self.time_frames,i)
-                #pp.suptitle('For $v^{3}=v^{2}+\\frac{1}{2}$ $5$ $(\mu=5\degree)$')
-                pp.suptitle('$For$ $v^{(3)}=\\frac{v^{(1)}+(v^{(1)}-M)}{max}$', fontsize=22)#'$For$ $v^{(3)}=\\frac{v^{(2)}+e^{(\\frac{-x}{2.3})}\cdot(v^{(2)}-(0.3\cdot M))}{max}$', fontsize=30)
-
-                pp.figure(2)
-                pop.plot_cartesian_pop(X[:,:,:,i],self.time_frames,i)
-
-#                pp.figure(3)
-#                pop.heat_map(X[:,:,:,i], i, self.time_frames, A)
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
 
                 pp.figure(4)
                 pop.plot_row(1,15,X[:,:,:,i],i, self.time_frames)
 
-<<<<<<< HEAD
-=======
-#                pp.figure(5)
-#                pop.twoD_activation(X[:,:,:,i], i, self.time_frames)
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
 
 #                pp.figure(3)
 #                pop.show_vectors(self.input, self.time_frames,i)
@@ -387,7 +301,6 @@ class Model(object):
 
           #  print i
 
-<<<<<<< HEAD
         fig=pp.figure(5)
         ax = fig.gca(projection='3d')
         surf=ax.plot_surface(self.x,self.y,self.mt_gauss, rstride=1, cstride=1, cmap=cm.jet, linewidth=0, antialiased=False)
@@ -400,19 +313,39 @@ class Model(object):
 
         pp.colorbar(surf, shrink=0.5, aspect=5)
 =======
-#        fig=pp.figure(2)
-#        ax = fig.gca(projection='3d')
-#        surf=ax.plot_surface(self.x,self.y,self.mt_gauss, rstride=1, cstride=1, cmap=cm.jet, linewidth=0, antialiased=False)
-#        pp.xlabel('Pixel')
-#        pp.ylabel('Pixel')
-#        pp.title('Spatial Kernel with %s=%.2f, size=%.2f, res=%.2f' % (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res))
-#        ax.set_zlim(ny.min(self.mt_gauss), ny.max(self.mt_gauss))
-#        ax.zaxis.set_major_locator(LinearLocator(10))
-#        ax.zaxis.set_major_formatter(FormatStrFormatter('%.02f'))
-#
-#        pp.colorbar(surf, shrink=0.5, aspect=5)
 
->>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
+                pp.figure(2)
+                pop.show_vectors(self.input[:,:,:,i-1])
+                pp.xlabel('Pixel')
+                pp.ylabel('Pixel')
+                pp.title('Model input population code for spatial kernel values: %s=%.2f, size=%.2f, \n res=%.2f and neuron kernel %s=%.2f'\
+                %  (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res,u"\u03C3", self.gauss_width))
+
+                pp.figure(2+i)
+                pop.show_vectors(X[:,:,:,i])
+                pp.xlabel('Pixel')
+                pp.ylabel('Pixel')
+                pp.title('Model output population code for spatial kernel values:%s=%.2f, size=%.2f, \n res=%.2f and neuron kernel %s=%.2f after %i model iterations'\
+                % (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res,u"\u03C3", self.gauss_width, i) )
+
+                pp.figure(1)
+                pop.plot_pop(X[:,:,:,i],self.time_frames,i)
+
+            else:
+                pp.figure(1)
+                pop.plot_pop(X[:,:,:,i],self.time_frames,i)
+
+                pp.figure(2)
+                pop.show_vectors(self.input[:,:,:,i])
+                pp.xlabel('Pixel')
+                pp.ylabel('Pixel')
+                pp.title('Model input population code for spatial kernel values:\n %s=%.2f, size=%.2f, res=%.2f and neuron kernel %s=%.2f'\
+                % (u"\u03C3",self.mt_kernel_sigma, self.mt_kernel_size, self.mt_kernel_res,u"\u03C3", self.gauss_width) )
+
+
+            print i
+
+>>>>>>> e55b40aded955d9d3bff44dbe26bbc0613f93a0f
 
 
 if __name__ == '__main__':
