@@ -1,0 +1,99 @@
+[Input]
+
+main_size = 30
+square_size = 10
+<<<<<<< HEAD
+time_frames = 1
+angle_outside= 135
+angle_inside= 45
+
+[PopCode]
+
+number_of_neurons=16
+neuron_sigma=30
+
+neuronal_tuning_angle_0=0.0
+neuron_sigma_angle_0=50
+neuronal_tuning_angle_1=22.5
+neuron_sigma_angle_1=50
+neuronal_tuning_angle_2=45.0
+neuron_sigma_angle_2=50
+neuronal_tuning_angle_3=67.5
+neuron_sigma_angle_3=50
+neuronal_tuning_angle_4=90.0
+neuron_sigma_angle_4=50
+neuronal_tuning_angle_5=112.5
+neuron_sigma_angle_5=50
+neuronal_tuning_angle_6=135.0
+neuron_sigma_angle_6=50
+neuronal_tuning_angle_7=157.5
+neuron_sigma_angle_7=50
+
+neuronal_tuning_angle_8=180.0
+neuron_sigma_angle_8=50
+neuronal_tuning_angle_9=202.5
+neuron_sigma_angle_9=50
+neuronal_tuning_angle_10=225.0
+neuron_sigma_angle_10=50
+neuronal_tuning_angle_11=247.5
+neuron_sigma_angle_11=50
+neuronal_tuning_angle_12=270.0
+neuron_sigma_angle_12=50
+neuronal_tuning_angle_13=292.5
+neuron_sigma_angle_13=50
+neuronal_tuning_angle_14=315.0
+neuron_sigma_angle_14=50
+neuronal_tuning_angle_15=337.5
+neuron_sigma_angle_15=50
+
+neuronal_tuning_angles=ny.array[0.0, 20.0, 40.0, 60.0, 90.0, 120.0, 140.0, 160.0, 180.0, 200.0, 220.0, 240.0, 270.0, 300.0, 320.0, 340.0]
+=======
+time_frames = 11
+angle_outside= 270
+angle_inside= 135
+
+[PopCode]
+neuron_sigma =30
+number_of_neurons=16
+
+neuronal_tuning_angle_0=0.0
+neuronal_tuning_angle_1=20.0
+neuronal_tuning_angle_2=40.0
+neuronal_tuning_angle_3=60.0
+neuronal_tuning_angle_4=90.0
+neuronal_tuning_angle_5=120.0
+neuronal_tuning_angle_6=140.0
+neuronal_tuning_angle_7=160.0
+
+neuronal_tuning_angle_8=180.0
+neuronal_tuning_angle_9=200.0
+neuronal_tuning_angle_10=220.0
+neuronal_tuning_angle_11=240.0
+neuronal_tuning_angle_12=270.0
+neuronal_tuning_angle_13=300.0
+neuronal_tuning_angle_14=320.0
+neuronal_tuning_angle_15=340.0
+>>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
+
+[V1]
+C = 1.0
+
+[MT]
+<<<<<<< HEAD
+kernel_sigma = 7.0
+=======
+kernel_sigma = 1.0
+>>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
+kernel_sigma1 = 0.5
+kernel_sigma2 = 3.0
+kernel_samples = 3.0
+kernel2_sigma1 = 0.5
+kernel2_sigma2 = 3.0
+kernel2_samples = 5.0
+<<<<<<< HEAD
+kernel_scale = 0.87
+kernel_size = 7.14
+kernel_res = 0.9
+=======
+kernel_scale = 0.7
+>>>>>>> 602d9f57371cd6dce19bf78416ab920e2d9ab5de
