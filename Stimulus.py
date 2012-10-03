@@ -1,6 +1,6 @@
 __author__ = 'ohaas'
 
-from PIL import Image, ImageDraw
+import Image, ImageDraw
 import matplotlib.pyplot as pp
 from matplotlib.patches import FancyBboxPatch as fbp
 import numpy as ny

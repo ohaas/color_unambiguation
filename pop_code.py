@@ -7,7 +7,7 @@ from matplotlib.patches import FancyArrowPatch as fap
 import Stimulus
 import Neurons
 import math
-from PIL import Image, ImageDraw
+import Image, ImageDraw
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
 from matplotlib.ticker import LinearLocator, FormatStrFormatter
@@ -129,7 +129,7 @@ class Population(object):
         frame1 = fig.add_subplot(math.floor(time_frames/3.0)+1,3,i+1, frameon=False)
         #frame1 = fig.add_subplot(111, frameon=False)
         pp.subplots_adjust(left=None, bottom=None, right=None, top=0.77, wspace=None, hspace=0.4)
-        im = pp.imread('colorspace_polar_z=0.0.jpg')
+        im = pp.imread('colorspace_polar_z=0.0.png')
         im = ny.fliplr(ny.rot90(im, k=2))
         # draw it on the canvas
         pp.imshow(im,figure=frame1)
